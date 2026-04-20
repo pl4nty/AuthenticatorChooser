@@ -7,8 +7,10 @@ using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using NLog;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Windows.Forms;
+using Windows.ApplicationModel;
 
 // ReSharper disable ClassNeverInstantiated.Global - it's actually instantiated by McMaster.Extensions.CommandLineUtils
 // ReSharper disable UnassignedGetOnlyAutoProperty - it's actually assigned by McMaster.Extensions.CommandLineUtils
@@ -25,6 +27,14 @@ public class Startup {
     private static readonly WindowsIdentity         CURRENT_USER    = WindowsIdentity.GetCurrent();
 
     private static Logger? logger;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetCurrentPackageFullName(ref uint packageFullNameLength, char[]? packageFullName);
+
+    private static bool isPackaged() {
+        uint len = 0;
+        return GetCurrentPackageFullName(ref len, null) != 15700; // APPMODEL_ERROR_NO_PACKAGE
+    }
 
     // #15
     [Option("--skip-all-non-security-key-options", CommandOptionType.NoValue)]
@@ -129,6 +139,19 @@ public class Startup {
 
     private bool registerAsStartupProgram() {
         try {
+            if (isPackaged()) {
+                StartupTask startupTask = StartupTask.GetAsync("AuthenticatorChooserStartup").GetAwaiter().GetResult();
+                StartupTaskState state  = startupTask.RequestEnableAsync().GetAwaiter().GetResult();
+                if (state is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy) {
+                    MessageBox.Show($"{PROGRAM_NAME} is now running in the background, and will also start automatically each time you log in to Windows.", PROGRAM_NAME, MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                } else {
+                    MessageBox.Show($"Could not register {PROGRAM_NAME} to start automatically on Windows logon: the startup task is {state}.", PROGRAM_NAME, MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+                return state is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy;
+            }
+
             string domainAndUsername = CURRENT_USER.Name;
 
             TaskDefinition scheduledTask = TaskService.Instance.NewTask();

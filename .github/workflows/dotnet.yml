@@ -32,21 +32,28 @@ jobs:
       run: dotnet publish ${{ env.ProjectName }} --no-build --runtime ${{ matrix.targetPlatform }} --configuration Release --no-self-contained -p:PublishSingleFile=true
 
     - name: Package MSIX
+      id: package
       run: |
-        $publishDir = "${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish"
+        $publishDir = "${{ env.ProjectName }}/bin/Release/net8.0-windows10.0.17763/${{ matrix.targetPlatform }}/publish"
+        echo "publishDir=$publishDir" >> $env:GITHUB_OUTPUT
         New-Item -ItemType Directory -Force "$publishDir/Assets" | Out-Null
         $ico = "${{ env.ProjectName }}/YubiKey.ico"
         magick $ico -resize 44x44   "$publishDir/Assets/Square44x44Logo.png"
         magick $ico -resize 150x150 "$publishDir/Assets/Square150x150Logo.png"
         magick $ico -resize 50x50   "$publishDir/Assets/StoreLogo.png"
+        $version = (Select-Xml -Path "${{ env.ProjectName }}/${{ env.ProjectName }}.csproj" -XPath "//*[local-name()='Version']").Node.InnerText
+        $version4 = ($version.Split('.') + @('0','0','0','0'))[0..3] -join '.'
+        (Get-Content "$publishDir/AppxManifest.xml") -replace 'Version="0\.0\.0\.0"', "Version=`"$version4`"" | Set-Content "$publishDir/AppxManifest.xml"
         $makeappx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter makeappx.exe -Recurse |
             Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
-        & $makeappx pack /d $publishDir /p "$publishDir/${{ env.ProjectName }}.msix" /nv /o
+        & $makeappx pack /d $publishDir /p "$publishDir/${{ env.ProjectName }}.msix" /o
       shell: pwsh
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7
       with:
         name: ${{ env.ProjectName }}-${{ matrix.targetPlatform }}
-        path: ${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/*.msix
+        path: |
+          ${{ steps.package.outputs.publishDir }}/*.exe
+          ${{ steps.package.outputs.publishDir }}/*.msix
         if-no-files-found: error
