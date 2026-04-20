@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Windows.Forms;
-using Windows.ApplicationModel;
 
 // ReSharper disable ClassNeverInstantiated.Global - it's actually instantiated by McMaster.Extensions.CommandLineUtils
 // ReSharper disable UnassignedGetOnlyAutoProperty - it's actually assigned by McMaster.Extensions.CommandLineUtils
@@ -28,12 +27,57 @@ public class Startup {
 
     private static Logger? logger;
 
+    private const string REGISTRY_KEY = @"Software\AuthenticatorChooser";
+
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetCurrentPackageFullName(ref uint packageFullNameLength, char[]? packageFullName);
 
     private static bool isPackaged() {
         uint len = 0;
         return GetCurrentPackageFullName(ref len, null) != 15700; // APPMODEL_ERROR_NO_PACKAGE
+    }
+
+    private static string[] mergeRegistrySettings(string[] args) {
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY);
+        if (key is null) return args;
+
+        List<string> merged = new(args);
+
+        if ((int?) key.GetValue("SkipAllNonSecurityKeyOptions") == 1 && !merged.Contains("--skip-all-non-security-key-options")) {
+            merged.Add("--skip-all-non-security-key-options");
+        }
+
+        if (key.GetValue("AutosubmitPinLength") is int pinLength && !merged.Any(a => a.StartsWith("--autosubmit-pin-length"))) {
+            merged.Add($"--autosubmit-pin-length={pinLength}");
+        }
+
+        if (key.GetValue("Log") is string logValue && !merged.Any(a => a == "-l" || a == "--log" || a.StartsWith("-l=") || a.StartsWith("--log="))) {
+            merged.Add(logValue.Length > 0 ? $"--log={logValue}" : "--log");
+        }
+
+        return merged.ToArray();
+    }
+
+    private void saveSettingsToRegistry() {
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY, writable: true);
+
+        if (skipAllNonSecurityKeyOptions) {
+            key.SetValue("SkipAllNonSecurityKeyOptions", 1, RegistryValueKind.DWord);
+        } else {
+            key.DeleteValue("SkipAllNonSecurityKeyOptions", throwOnMissingValue: false);
+        }
+
+        if (autosubmitPinLength.HasValue) {
+            key.SetValue("AutosubmitPinLength", autosubmitPinLength.Value, RegistryValueKind.DWord);
+        } else {
+            key.DeleteValue("AutosubmitPinLength", throwOnMissingValue: false);
+        }
+
+        if (log.enabled) {
+            key.SetValue("Log", log.filename ?? string.Empty, RegistryValueKind.String);
+        } else {
+            key.DeleteValue("Log", throwOnMissingValue: false);
+        }
     }
 
     // #15
@@ -56,6 +100,12 @@ public class Startup {
     [STAThread]
     public static int Main(string[] args) {
         try {
+            // When the MSIX startup task launches with no args, merge stored registry settings so options like
+            // --skip-all-non-security-key-options are applied without needing CLI args on the startup task.
+            if (isPackaged() && !args.Contains("--autostart-on-logon")) {
+                args = mergeRegistrySettings(args);
+            }
+
             using var app = new CommandLineApplication<Startup> {
                 UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw
             };
@@ -140,16 +190,13 @@ public class Startup {
     private bool registerAsStartupProgram() {
         try {
             if (isPackaged()) {
-                StartupTask startupTask = StartupTask.GetAsync("AuthenticatorChooserStartup").GetAwaiter().GetResult();
-                StartupTaskState state  = startupTask.RequestEnableAsync().GetAwaiter().GetResult();
-                if (state is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy) {
-                    MessageBox.Show($"{PROGRAM_NAME} is now running in the background, and will also start automatically each time you log in to Windows.", PROGRAM_NAME, MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                } else {
-                    MessageBox.Show($"Could not register {PROGRAM_NAME} to start automatically on Windows logon: the startup task is {state}.", PROGRAM_NAME, MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                }
-                return state is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy;
+                // The uap5:StartupTask in AppxManifest.xml (Enabled="true") handles automatic startup at logon for
+                // MSIX installs; no Task Scheduler registration is needed. Save CLI options to the registry so the
+                // startup task, which launches without arguments, can read them back at login (see mergeRegistrySettings).
+                saveSettingsToRegistry();
+                MessageBox.Show($"{PROGRAM_NAME} is now running in the background, and will also start automatically each time you log in to Windows.", PROGRAM_NAME, MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return true;
             }
 
             string domainAndUsername = CURRENT_USER.Name;
