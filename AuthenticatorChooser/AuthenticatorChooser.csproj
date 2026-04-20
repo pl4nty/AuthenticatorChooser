@@ -24,6 +24,9 @@
 
     <ItemGroup>
         <Content Include="YubiKey.ico" />
+        <Content Include="AppxManifest.xml">
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
         <None Include="..\Readme.md;..\.github*\**" />
     </ItemGroup>
 

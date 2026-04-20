@@ -31,9 +31,22 @@ jobs:
     - name: Publish
       run: dotnet publish ${{ env.ProjectName }} --no-build --runtime ${{ matrix.targetPlatform }} --configuration Release --no-self-contained -p:PublishSingleFile=true
 
+    - name: Package MSIX
+      run: |
+        $publishDir = "${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish"
+        New-Item -ItemType Directory -Force "$publishDir/Assets" | Out-Null
+        $ico = "${{ env.ProjectName }}/YubiKey.ico"
+        magick $ico -resize 44x44   "$publishDir/Assets/Square44x44Logo.png"
+        magick $ico -resize 150x150 "$publishDir/Assets/Square150x150Logo.png"
+        magick $ico -resize 50x50   "$publishDir/Assets/StoreLogo.png"
+        $makeappx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter makeappx.exe -Recurse |
+            Sort-Object FullName | Select-Object -Last 1 -ExpandProperty FullName
+        & $makeappx pack /d $publishDir /p "$publishDir/${{ env.ProjectName }}.msix" /nv /o
+      shell: pwsh
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7
       with:
         name: ${{ env.ProjectName }}-${{ matrix.targetPlatform }}
-        path: ${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/*.exe
+        path: ${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/*.msix
         if-no-files-found: error
