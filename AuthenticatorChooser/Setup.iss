@@ -7,10 +7,8 @@
 
 #if Arch == "win-arm64"
   #define ArchId "arm64"
-  #define RuntimeArch "arm64"
 #else
   #define ArchId "x64compatible"
-  #define RuntimeArch "x64"
 #endif
 
 [Setup]
@@ -42,44 +40,12 @@ Filename: "{app}\{#AppExeName}"; Description: "Start {#AppName} now"; Flags: now
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/im {#AppExeName} /f"; Flags: runhidden; RunOnceId: "StopApp"
 
+; https://github.com/DomGries/InnoDependencyInstaller - downloads and installs the .NET Desktop Runtime 8 if it's missing
+#include "CodeDependencies.iss"
+
 [Code]
-function IsDotNet8DesktopInstalled: Boolean;
-var
-  FindRec: TFindRec;
+function InitializeSetup: Boolean;
 begin
-  Result := False;
-  if FindFirst(ExpandConstant('{commonpf}\dotnet\shared\Microsoft.WindowsDesktop.App\8.*'), FindRec) then
-  try
-    repeat
-      if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0 then
-        Result := True;
-    until Result or not FindNext(FindRec);
-  finally
-    FindClose(FindRec);
-  end;
-end;
-
-function PrepareToInstall(var NeedsRestart: Boolean): String;
-var
-  Installer: String;
-  ResultCode: Integer;
-begin
-  Result := '';
-  if IsDotNet8DesktopInstalled then
-    Exit;
-
-  Installer := ExpandConstant('{tmp}\windowsdesktop-runtime-8.exe');
-  try
-    DownloadTemporaryFile('https://aka.ms/dotnet/8.0/windowsdesktop-runtime-{#RuntimeArch}.exe', 'windowsdesktop-runtime-8.exe', '', nil);
-  except
-    Result := 'Could not download the .NET Desktop Runtime 8: ' + GetExceptionMessage;
-    Exit;
-  end;
-
-  if not Exec(Installer, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
-    Result := 'Could not run the .NET Desktop Runtime 8 installer.'
-  else if ResultCode = 3010 then
-    NeedsRestart := True
-  else if ResultCode <> 0 then
-    Result := Format('The .NET Desktop Runtime 8 installer failed with exit code %d.', [ResultCode]);
+  Dependency_AddDotNet80Desktop;
+  Result := True;
 end;

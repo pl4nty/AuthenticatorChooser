@@ -74,7 +74,7 @@ Even if this program doesn't click the Next button (because an extra choice was 
         ```ps1
         .\AuthenticatorChooser --autostart-on-logon
         ```
-    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user with highest privileges when you log in to Windows
+    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user when you log in to Windows
 
 ## Demo
 
