@@ -57,18 +57,16 @@ Even if this program doesn't click the Next button (because an extra choice was 
 
 ## Installation
 
-This program needs the UIAccess privilege to interact with FIDO prompts, which Windows only grants to a code-signed executable running from a secure location (under `C:\Program Files\` or `%SystemRoot%\System32`). It does **not** need to run as administrator. Either installation method below satisfies this; the installer is easiest.
-
 ### Installer
 
-1. Download the latest `AuthenticatorChooser-`*`<version>`*`-`*`<arch>`*`-Setup.exe` for your CPU architecture from the [releases](https://github.com/Aldaviva/AuthenticatorChooser/releases/latest) page.
-1. Run it. It installs to `C:\Program Files\AuthenticatorChooser\` (this one step needs administrator rights), starts the program, and adds a Startup shortcut so it launches automatically each time you log in.
-1. To pass [command-line arguments](https://github.com/Aldaviva/AuthenticatorChooser/wiki/Command%E2%80%90line-arguments) like `--skip-all-non-security-key-options`, open your Startup folder (press <kbd>⊞ Win</kbd>+<kbd>R</kbd> and enter `shell:startup`), then edit the `AuthenticatorChooser` shortcut and append the arguments to its **Target**.
+1. [Download the latest `Setup.exe` installer for your CPU architecture.](https://github.com/Aldaviva/AuthenticatorChooser/releases/latest)
+1. Run it. It installs to `C:\Program Files\AuthenticatorChooser\`, starts the program, and adds a Startup shortcut so it launches automatically each time you log in.
+1. If you'd like to specify additional [command-line arguments](https://github.com/Aldaviva/AuthenticatorChooser/wiki/Command%E2%80%90line-arguments) like `--skip-all-non-security-key-options`, open your Startup folder (press <kbd>⊞ Win</kbd>+<kbd>R</kbd> and enter `shell:startup`), then edit the `AuthenticatorChooser` shortcut and append the arguments to its `Target`.
 
 ### Manual (ZIP)
 
 1. [Download the latest release ZIP archive for your CPU architecture.](https://github.com/Aldaviva/AuthenticatorChooser/releases/latest)
-1. Extract the `AuthenticatorChooser.exe` file from the ZIP archive to a secure location under `C:\Program Files\` (or `%SystemRoot%\System32`), such as `C:\Program Files\AuthenticatorChooser\`. Copying it there requires administrator rights once.
+1. Extract the `AuthenticatorChooser.exe` file from the ZIP archive to a directory in `C:\Program Files\`, like `C:\Program Files\AuthenticatorChooser\`.
 1. Run the program by double-clicking `AuthenticatorChooser.exe`.
     - Nothing will appear because it's a background program with no UI, but you can tell it's running by searching for `AuthenticatorChooser` in Task Manager.
 1. Register the program to run automatically on user logon with **any one** of the following techniques. If you'd like to specify additional [command-line arguments](https://github.com/Aldaviva/AuthenticatorChooser/wiki/Command%E2%80%90line-arguments) like `--skip-all-non-security-key-options`, you can do that here too.
@@ -76,7 +74,7 @@ This program needs the UIAccess privilege to interact with FIDO prompts, which W
         ```ps1
         .\AuthenticatorChooser --autostart-on-logon
         ```
-    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user when you log in to Windows (no elevation required; it uses UIAccess instead)
+    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user with highest privileges when you log in to Windows
 
 ## Demo
 
@@ -108,6 +106,8 @@ The program will be compiled to the following path, assuming your CPU architectu
 ```text
 .\bin\Release\net8.0-windows\win-x64\publish\AuthenticatorChooser.exe
 ```
+
+To test, sign the exe with a certificate trusted by your device (it can be self-signed). Then copy the exe to `C:\Program Files\AuthenticatorChooser\`.
 
 You can also use an IDE like [Visual Studio](https://visualstudio.microsoft.com/vs/) Community 2022 or 2026 instead of the command line if you prefer.
 
