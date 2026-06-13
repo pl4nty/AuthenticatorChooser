@@ -58,7 +58,7 @@ Even if this program doesn't click the Next button (because an extra choice was 
 ## Installation
 
 1. [Download the latest release ZIP archive for your CPU architecture.](https://github.com/Aldaviva/AuthenticatorChooser/releases/latest)
-1. Extract the `AuthenticatorChooser.exe` file from the ZIP archive to a directory of your choice, like `C:\Program Files\AuthenticatorChooser\`.
+1. Extract the `AuthenticatorChooser.exe` file from the ZIP archive to a secure location such as `C:\Program Files\AuthenticatorChooser\`. This must be under `C:\Program Files\` (or `%SystemRoot%\System32`); Windows only grants the UIAccess privilege needed to interact with FIDO prompts to code-signed programs running from a secure location, so copying it there requires administrator rights once.
 1. Run the program by double-clicking `AuthenticatorChooser.exe`.
     - Nothing will appear because it's a background program with no UI, but you can tell it's running by searching for `AuthenticatorChooser` in Task Manager.
 1. Register the program to run automatically on user logon with **any one** of the following techniques. If you'd like to specify additional [command-line arguments](https://github.com/Aldaviva/AuthenticatorChooser/wiki/Command%E2%80%90line-arguments) like `--skip-all-non-security-key-options`, you can do that here too.
@@ -66,7 +66,7 @@ Even if this program doesn't click the Next button (because an extra choice was 
         ```ps1
         .\AuthenticatorChooser --autostart-on-logon
         ```
-    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user with highest privileges when you log in to Windows
+    - Manually add a new task to Task Scheduler that starts `AuthenticatorChooser.exe` as your user when you log in to Windows (no elevation required; it uses UIAccess instead)
 
 ## Demo
 
