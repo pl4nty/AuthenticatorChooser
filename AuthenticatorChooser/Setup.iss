@@ -16,15 +16,14 @@ AppId={{ce8383a4-bdac-4d97-b0a6-8fc582b4c102}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-; Program Files is a "secure location", which (together with the Authenticode signature) is required for Windows to
-; grant the uiAccess privilege declared in app.manifest, so installing here is what lets the app run without admin.
 DefaultDirName={autopf}\{#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 ArchitecturesAllowed={#ArchId}
 ArchitecturesInstallIn64BitMode={#ArchId}
 UninstallDisplayIcon={app}\{#AppExeName}
-OutputDir=bin\installer
+; Emit the installer into the publish folder so it's uploaded alongside the main binary.
+OutputDir=bin\Release\net8.0-windows\{#Arch}\publish
 OutputBaseFilename={#AppName}-{#AppVersion}-{#Arch}-Setup
 Compression=lzma2
 SolidCompression=yes
@@ -33,8 +32,6 @@ SolidCompression=yes
 Source: "{#SourceExe}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-; Start on logon via a Startup shortcut (the simpler alternative to a scheduled task). No elevation: Explorer launches
-; the signed exe from Program Files and the OS grants uiAccess automatically.
 Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"
 
 [Run]

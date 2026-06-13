@@ -4,9 +4,7 @@
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
         <security>
             <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-                <!-- asInvoker (not elevated) + uiAccess="true": run as a standard user without admin, while still being
-                     able to drive the CredentialUIBroker FIDO prompt, which runs at the UIAccess integrity level. Requires
-                     the EXE to be Authenticode-signed and launched from a secure location (e.g. %ProgramFiles%). -->
+                <!-- The CredentialUIBroker FIDO prompt runs with UIAccess since Jan 2026 https://github.com/Aldaviva/AuthenticatorChooser/issues/44 -->
                 <requestedExecutionLevel level="asInvoker" uiAccess="true" />
             </requestedPrivileges>
         </security>

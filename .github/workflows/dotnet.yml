@@ -38,8 +38,7 @@ jobs:
     - name: Publish
       run: dotnet publish ${{ env.ProjectName }} --no-build --runtime ${{ matrix.targetPlatform }} --configuration Release --no-self-contained -p:PublishSingleFile=true
 
-    # The EXE must be Authenticode-signed by a trusted cert for Windows to grant it the uiAccess privilege
-    # (see app.manifest). Mirrors the Azure Key Vault signing flow from pl4nty/winget-extras.
+    # Signing is required for the uiAccess privilege
     - name: Azure login
       uses: azure/login@v2
       with:
@@ -74,12 +73,12 @@ jobs:
         KEY_VAULT_URL: ${{ vars.KEY_VAULT_URL }}
         KEY_VAULT_CERT: ${{ vars.KEY_VAULT_CERT }}
       run: |
-        $installer = Get-ChildItem "${{ env.ProjectName }}/bin/installer/*.exe"
+        $installer = Get-ChildItem "${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/*-Setup.exe"
         AzureSignTool sign -kvu $env:KEY_VAULT_URL -kvc $env:KEY_VAULT_CERT -kvm -tr http://timestamp.acs.microsoft.com -td sha256 -fd sha256 $installer.FullName
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7
       with:
         name: ${{ env.ProjectName }}-${{ matrix.targetPlatform }}
-        path: ${{ env.ProjectName }}/bin/installer/*.exe
+        path: ${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/*.exe
         if-no-files-found: error
