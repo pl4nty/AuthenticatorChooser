@@ -60,7 +60,7 @@ Even if this program doesn't click the Next button (because an extra choice was 
 ### Installer
 
 1. [Download the latest `Setup.exe` installer for your CPU architecture.](https://github.com/Aldaviva/AuthenticatorChooser/releases/latest)
-1. Run it. It installs to `C:\Program Files\AuthenticatorChooser\`, starts the program, and adds a Startup shortcut so it launches automatically each time you log in.
+1. Run it. It installs the [.NET Desktop Runtime 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) if it's missing, installs to `C:\Program Files\AuthenticatorChooser\`, starts the program, and adds a Startup shortcut so it launches automatically each time you log in.
 1. If you'd like to specify additional [command-line arguments](https://github.com/Aldaviva/AuthenticatorChooser/wiki/Command%E2%80%90line-arguments) like `--skip-all-non-security-key-options`, open your Startup folder (press <kbd>⊞ Win</kbd>+<kbd>R</kbd> and enter `shell:startup`), then edit the `AuthenticatorChooser` shortcut and append the arguments to its `Target`.
 
 ### Manual (ZIP)
