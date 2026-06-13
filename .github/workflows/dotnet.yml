@@ -2,7 +2,7 @@ name: .NET
 
 on:
   push:
-    branches: [ master, claude/festive-johnson-lqo0h1 ]
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
