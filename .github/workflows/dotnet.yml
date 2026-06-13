@@ -60,6 +60,7 @@ jobs:
     - name: Build installer
       run: |
         choco install innosetup --no-progress -y
+        curl.exe -fsSL https://raw.githubusercontent.com/DomGries/InnoDependencyInstaller/master/CodeDependencies.iss -o ${{ env.ProjectName }}/CodeDependencies.iss
         $exe = (Get-Item "${{ env.ProjectName }}/bin/Release/net8.0-windows/${{ matrix.targetPlatform }}/publish/${{ env.ProjectName }}.exe").FullName
         $version = (Get-Item $exe).VersionInfo.FileVersion
         & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
